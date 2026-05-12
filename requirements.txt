@@ -1,0 +1,11 @@
+# Залежності для запуску завдань ММФ (задачі 18–23)
+#
+# Встановлення:
+#   pip install -r requirements.txt
+#
+# Якщо Python встановлено через Homebrew:
+#   pip3 install -r requirements.txt --break-system-packages
+
+numpy>=1.26.0       # масиви, векторні обчислення
+scipy>=1.12.0       # чисельне інтегрування (scipy.integrate.quad)
+matplotlib>=3.8.0   # побудова графіків
