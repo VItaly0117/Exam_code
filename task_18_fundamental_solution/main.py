@@ -11,6 +11,7 @@
 При t → ∞: розподіл розширюється і згасає (тепло розповсюджується)
 """
 
+from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -50,7 +51,7 @@ ax2.grid(True, alpha=0.3)
 
 plt.suptitle('Завдання 18: Розповсюдження одиничного теплового імпульсу', fontweight='bold')
 plt.tight_layout()
-plt.savefig('graphs.png', dpi=150, bbox_inches='tight')
+plt.savefig(Path(__file__).parent / 'graphs.png', dpi=150, bbox_inches='tight')
 plt.show()
 
 print("Завдання 18 виконано. Графік збережено: graphs.png")

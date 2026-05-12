@@ -14,6 +14,7 @@ f(x + ct) — хвиля, що рухається вліво.
 Початкове зміщення ділиться на дві рівні частини, які розходяться в протилежних напрямках.
 """
 
+from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import quad
@@ -81,7 +82,7 @@ plt.suptitle(
     fontweight='bold'
 )
 plt.tight_layout()
-plt.savefig('graphs.png', dpi=150, bbox_inches='tight')
+plt.savefig(Path(__file__).parent / 'graphs.png', dpi=150, bbox_inches='tight')
 plt.show()
 
 print("Завдання 22 виконано. Графік збережено: graphs.png")
