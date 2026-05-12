@@ -24,7 +24,7 @@ x = np.linspace(-8, 8, 400)
 time_values = [0.0, 0.05, 0.2, 0.5, 1.0, 3.0]
 
 # Ядро теплопровідності G(x, t)
-def heat_kernel(x, t, alpha):
+def heat_kernel(x, t):
     return (1.0 / np.sqrt(4 * np.pi * alpha**2 * t)) * np.exp(-x**2 / (4 * alpha**2 * t))
 
 # Три варіанти початкової умови φ(x)
@@ -43,8 +43,9 @@ def solve(x_arr, t, phi):
         return phi(x_arr)
     u = np.zeros_like(x_arr, dtype=float)
     for i, xi in enumerate(x_arr):
-        integrand = lambda zeta: heat_kernel(xi - zeta, t, alpha) * phi(np.array([zeta]))[0]
-        u[i], _ = quad(integrand, -10, 10, limit=100)
+        # u(x,t) = ∫ G(x-ξ, t) · φ(ξ) dξ
+        u[i], _ = quad(lambda zeta: heat_kernel(xi - zeta, t) * phi(np.array([zeta]))[0],
+                       -10, 10, limit=100)
     return u
 
 # Побудова графіків
@@ -55,16 +56,16 @@ initial_conditions = [
 ]
 
 colors = plt.cm.viridis(np.linspace(0.1, 0.9, len(time_values)))
-
 fig, axes = plt.subplots(1, 3, figsize=(18, 6))
 
 for col, (phi, title) in enumerate(initial_conditions):
     ax = axes[col]
     for i, t in enumerate(time_values):
-        print(f"  {title.split(chr(10))[0]}, t = {t}...")
+        print(f"  {title.splitlines()[0]}, t = {t}...")
         u = solve(x, t, phi)
-        ls = '--' if t == 0.0 else '-'
-        ax.plot(x, u, color=colors[i], linestyle=ls, linewidth=1.8, label=f't = {t}')
+        ax.plot(x, u, color=colors[i],
+                linestyle='--' if t == 0.0 else '-',
+                linewidth=1.8, label=f't = {t}')
     ax.set_xlabel('x')
     ax.set_ylabel('u(x, t)')
     ax.set_title(title)

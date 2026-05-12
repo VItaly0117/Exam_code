@@ -6,14 +6,12 @@
 Розглядаються три комбінації граничних умов:
 
 Задача A: Нейман(0) + Діріхле(L)
-    u_x(0,t) = 0  (ізольований лівий кінець)
-    u(L, t) = 0
-    Власні функції: cos((2n−1)πx / (2L)),   λ_n = ((2n−1)π/(2L))²
+    u_x(0,t) = 0  (ізольований лівий кінець),  u(L,t) = 0
+    Власні функції: cos((2n−1)πx/(2L)),   λ_n = ((2n−1)π/(2L))²
 
 Задача B: Діріхле(0) + Нейман(L)
-    u(0, t) = 0
-    u_x(L,t) = 0  (ізольований правий кінець)
-    Власні функції: sin((2n−1)πx / (2L)),   λ_n = ((2n−1)π/(2L))²
+    u(0,t) = 0,  u_x(L,t) = 0  (ізольований правий кінець)
+    Власні функції: sin((2n−1)πx/(2L)),   λ_n = ((2n−1)π/(2L))²
 
 Задача C: Нейман(0) + Нейман(L)
     u_x(0,t) = 0,  u_x(L,t) = 0  (обидва кінці ізольовані)
@@ -40,6 +38,11 @@ def phi_sine(x):
 def phi_step(x):
     return np.where(x < 0.5, 1.0, 0.0)
 
+# Загальна функція обчислення коефіцієнта A_n
+def coeff(phi, basis_fn, L):
+    val, _ = quad(lambda xi: float(phi(xi)) * basis_fn(xi), 0, L)
+    return 2.0 / L * val
+
 # Задача A: Нейман(0) + Діріхле(L)
 # Власні функції: X_n(x) = cos((2n-1)πx/(2L))
 def solve_A(x_arr, t, phi):
@@ -49,8 +52,7 @@ def solve_A(x_arr, t, phi):
     for n in range(1, N_terms + 1):
         lam = ((2*n - 1) * np.pi / (2*L))**2
         X_n = np.cos((2*n - 1) * np.pi * x_arr / (2*L))
-        A_n, _ = quad(lambda x: phi(np.array([x]))[0] * np.cos((2*n-1)*np.pi*x/(2*L)), 0, L)
-        A_n *= 2.0 / L
+        A_n = coeff(phi, lambda xi, n=n: np.cos((2*n-1)*np.pi*xi/(2*L)), L)
         u += A_n * np.exp(-lam * alpha**2 * t) * X_n
     return u
 
@@ -63,8 +65,7 @@ def solve_B(x_arr, t, phi):
     for n in range(1, N_terms + 1):
         lam = ((2*n - 1) * np.pi / (2*L))**2
         X_n = np.sin((2*n - 1) * np.pi * x_arr / (2*L))
-        A_n, _ = quad(lambda x: phi(np.array([x]))[0] * np.sin((2*n-1)*np.pi*x/(2*L)), 0, L)
-        A_n *= 2.0 / L
+        A_n = coeff(phi, lambda xi, n=n: np.sin((2*n-1)*np.pi*xi/(2*L)), L)
         u += A_n * np.exp(-lam * alpha**2 * t) * X_n
     return u
 
@@ -73,13 +74,12 @@ def solve_B(x_arr, t, phi):
 def solve_C(x_arr, t, phi):
     if t <= 0:
         return phi(x_arr)
-    A_0, _ = quad(lambda x: phi(np.array([x]))[0], 0, L)
-    A_0 *= 2.0 / L
+    # Вільний член (нульова мода): A_0/2, де A_0 = (2/L)·∫φ dx = середня температура · 2
+    A_0 = coeff(phi, lambda xi: 1.0, L)
     u = np.full_like(x_arr, A_0 / 2.0, dtype=float)
     for n in range(1, N_terms + 1):
         lam = (n * np.pi / L)**2
-        A_n, _ = quad(lambda x: phi(np.array([x]))[0] * np.cos(n*np.pi*x/L), 0, L)
-        A_n *= 2.0 / L
+        A_n = coeff(phi, lambda xi, n=n: np.cos(n*np.pi*xi/L), L)
         u += A_n * np.exp(-lam * alpha**2 * t) * np.cos(n * np.pi * x_arr / L)
     return u
 
@@ -91,16 +91,16 @@ problems = [
 ]
 
 colors = plt.cm.plasma(np.linspace(0.1, 0.9, len(time_values)))
-
 fig, axes = plt.subplots(1, 3, figsize=(18, 6))
 
 for col, (title, solver, phi) in enumerate(problems):
     ax = axes[col]
-    print(f"Обчислення: {title.split(chr(10))[0]}...")
+    print(f"Обчислення: {title.splitlines()[0]}...")
     for i, t in enumerate(time_values):
         u = solver(x, t, phi)
-        ls = '--' if t == 0.0 else '-'
-        ax.plot(x, u, color=colors[i], linestyle=ls, linewidth=1.8, label=f't = {t}')
+        ax.plot(x, u, color=colors[i],
+                linestyle='--' if t == 0.0 else '-',
+                linewidth=1.8, label=f't = {t}')
     ax.set_xlabel('x')
     ax.set_ylabel('u(x, t)')
     ax.set_title(title)

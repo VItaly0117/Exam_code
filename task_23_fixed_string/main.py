@@ -52,19 +52,20 @@ def g_impulse(x):
     return np.sin(3 * np.pi * x / L)
 
 # Обчислення коефіцієнтів ряду
-def compute_coeffs(f, g, alpha, L, N):
+def compute_coeffs(f, g):
     a_list, b_list = [], []
-    for n in range(1, N + 1):
-        b_n, _ = quad(lambda x: f(np.array([x]))[0] * np.sin(n*np.pi*x/L), 0, L)
+    for n in range(1, N_terms + 1):
+        sin_n = lambda xi, n=n: np.sin(n * np.pi * xi / L)
+        b_n, _ = quad(lambda xi, n=n: float(f(xi)) * sin_n(xi, n), 0, L)
         b_n *= 2.0 / L
-        a_n, _ = quad(lambda x: g(np.array([x]))[0] * np.sin(n*np.pi*x/L), 0, L)
+        a_n, _ = quad(lambda xi, n=n: float(g(xi)) * sin_n(xi, n), 0, L)
         a_n *= 2.0 / (n * np.pi * alpha)
-        a_list.append(a_n)
         b_list.append(b_n)
+        a_list.append(a_n)
     return a_list, b_list
 
 # Розв'язок u(x,t) як ряд за власними функціями
-def solve(x_arr, t, alpha, L, a_list, b_list):
+def solve(x_arr, t, a_list, b_list):
     u = np.zeros_like(x_arr, dtype=float)
     for n, (a_n, b_n) in enumerate(zip(a_list, b_list), start=1):
         omega_n = n * np.pi * alpha / L
@@ -79,22 +80,18 @@ problems = [
 ]
 
 colors = plt.cm.rainbow(np.linspace(0, 0.9, len(time_values)))
-
 fig, axes = plt.subplots(3, 1, figsize=(14, 12))
 
 for row, (title, f, g) in enumerate(problems):
     ax = axes[row]
-    print(f"Обчислення коефіцієнтів: {title.split(chr(10))[0]}...")
-    a_list, b_list = compute_coeffs(f, g, alpha, L, N_terms)
+    print(f"Обчислення коефіцієнтів: {title.splitlines()[0]}...")
+    a_list, b_list = compute_coeffs(f, g)
 
     for i, t in enumerate(time_values):
-        if t == 0.0:
-            u = f(x)
-            ls = '--'
-        else:
-            u = solve(x, t, alpha, L, a_list, b_list)
-            ls = '-'
-        ax.plot(x, u, color=colors[i], linestyle=ls, linewidth=1.5, label=f't = {t}')
+        u = f(x) if t == 0.0 else solve(x, t, a_list, b_list)
+        ax.plot(x, u, color=colors[i],
+                linestyle='--' if t == 0.0 else '-',
+                linewidth=1.5, label=f't = {t}')
 
     ax.set_xlabel('x (положення на струні)')
     ax.set_ylabel('u(x, t)')

@@ -4,10 +4,10 @@
 
 Задача на відрізку [0, L]:
     u_t = α² · u_xx,   0 < x < L,  t > 0
-    u(0, t) = 0,  u(L, t) = 0       — граничні умови Діріхле
-    u(x, 0) = φ(x)                   — початкова умова
+    u(0, t) = 0,  u(L, t) = 0   — граничні умови Діріхле
+    u(x, 0) = φ(x)              — початкова умова
 
-Метод розділення змінних дає власні функції sin(nπx/L) та власні значення λ_n = (nπ/L)².
+Метод розділення змінних → власні функції sin(nπx/L), λ_n = (nπ/L)².
 
 Розв'язок:
     u(x, t) = Σ A_n · exp(−(nπα/L)²·t) · sin(nπx/L)
@@ -38,24 +38,19 @@ def phi_sine_sum(x):
 def phi_triangular(x):
     return np.where(x <= 0.5, 2 * x, 2 * (1 - x))
 
-# Коефіцієнти Фур'є A_n
+# Коефіцієнти Фур'є A_n = (2/L) · ∫₀ᴸ φ(x)·sin(nπx/L) dx
 def fourier_coefficients(phi, L, N):
     coeffs = []
     for n in range(1, N + 1):
-        integrand = lambda x, n=n: phi(np.array([x]))[0] * np.sin(n * np.pi * x / L)
-        A_n, _ = quad(integrand, 0, L)
+        A_n, _ = quad(lambda xi, n=n: float(phi(xi)) * np.sin(n * np.pi * xi / L), 0, L)
         coeffs.append(2.0 / L * A_n)
     return coeffs
 
 # Розв'язок u(x, t) як ряд Фур'є
-def solve(x_arr, t, alpha, L, coeffs):
-    if t <= 0:
-        # При t=0 ряд збігається до початкової умови
-        return sum(A * np.sin(n * np.pi * x_arr / L)
-                   for n, A in enumerate(coeffs, start=1))
+def solve(x_arr, t, coeffs):
     u = np.zeros_like(x_arr, dtype=float)
     for n, A_n in enumerate(coeffs, start=1):
-        decay = np.exp(-(n * np.pi * alpha / L)**2 * t)
+        decay = np.exp(-(n * np.pi * alpha / L)**2 * t) if t > 0 else 1.0
         u += A_n * decay * np.sin(n * np.pi * x_arr / L)
     return u
 
@@ -67,7 +62,6 @@ initial_conditions = [
 ]
 
 colors = plt.cm.plasma(np.linspace(0.1, 0.9, len(time_values)))
-
 fig, axes = plt.subplots(1, 3, figsize=(18, 6))
 
 for col, (phi, title) in enumerate(initial_conditions):
@@ -76,9 +70,10 @@ for col, (phi, title) in enumerate(initial_conditions):
     coeffs = fourier_coefficients(phi, L, N_terms)
 
     for i, t in enumerate(time_values):
-        u = solve(x, t, alpha, L, coeffs)
-        ls = '--' if t == 0.0 else '-'
-        ax.plot(x, u, color=colors[i], linestyle=ls, linewidth=1.8, label=f't = {t}')
+        u = solve(x, t, coeffs)
+        ax.plot(x, u, color=colors[i],
+                linestyle='--' if t == 0.0 else '-',
+                linewidth=1.8, label=f't = {t}')
 
     ax.set_xlabel('x')
     ax.set_ylabel('u(x, t)')
